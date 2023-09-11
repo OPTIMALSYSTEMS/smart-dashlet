@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" type="text/css" href="styles/main.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css">
+  <title>Chat App</title>
+</head>
+<body>
+  <div id="app-container">
+    <div id="side-panel">
+      <h2>Chat History</h2>
+      <div id="chat-history">
+        <!-- Chat history items will be appended here -->
+      </div>
+    </div>
+    <div id="chat-container">
+      <div id="chat-window">
+        <!-- Messages will be appended here -->
+      </div>
+      <div id="button-container">
+        <button id="regenerate-button" class="action-button" title="Regenerate">
+          <i class="fas fa-sync"></i> Regenerate
+        </button>
+        <button id="share-button" class="action-button" title="Share">
+          <i class="fas fa-share-alt"></i> Share
+        </button>
+        <button id="reset-chat-button" class="action-button" title="Reset Chat">
+          <i class="fas fa-undo"></i> Reset Chat
+        </button>
+        <button id="new-chat-button" class="action-button" title="New Chat">
+          <i class="fas fa-comment-alt"></i> New Chat
+        </button>
+        <button id="clear-context-button" class="action-button" title="Clear Context">
+          <i class="fas fa-ban"></i> Clear Context
+        </button>
+      </div>
+      <button id="down-arrow-button">⬇️</button>
+      <div id="input-container">
+        <input type="text" id="input-field" placeholder="Type a message...">
+        <button id="send-button">Send</button>
+      </div>
+    </div>
+  </div>
+  <script src="js/main.js"></script>
+</body>
+</html>
