@@ -159,3 +159,21 @@ body {
     margin-right: 5px;
   }
   
+  /* CSS for the disabled button and ellipsis animation */
+  #send-button[disabled] {
+    background-color: #ccc; /* Change the background color for the disabled button */
+    cursor: not-allowed; /* Change cursor to not-allowed */
+  }
+
+  @keyframes ellipsis {
+    to {
+      width: 1.25em; /* Adjust the width to control the number of dots */
+    }
+  }
+
+  .ellipsis {
+    overflow: hidden;
+    white-space: nowrap;
+    width: 0;
+    animation: ellipsis 1s infinite; /* Adjust the animation duration as needed */
+  }

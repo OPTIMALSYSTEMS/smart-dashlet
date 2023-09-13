@@ -3,99 +3,217 @@ let allChats = {};
 
 const generateChatID = () => {
   return `_${Math.random().toString(36).substr(2, 9)}`;
-}
+};
 
-const renderChatHistory = () => {
-  const chatHistory = document.querySelector("#chat-history");
-  chatHistory.innerHTML = "";
-  
-  for (let id in allChats) {
-    let historyItem = document.createElement("div");
-    historyItem.textContent = `Chat from: ${new Date(allChats[id].timestamp).toDateString()}`;
-    historyItem.className = "history-item";
-    historyItem.onclick = () => {
-      document.querySelector("#chat-window").innerHTML = allChats[id].messages;
-    };
-    chatHistory.appendChild(historyItem);
+function renderChatHistory() {
+  const chatHistory = document.getElementById('chat-history');
+  chatHistory.innerHTML = '';
+
+  const groupedChats = groupChatsByDate(allChats);
+
+  for (const date in groupedChats) {
+    const chatGroup = groupedChats[date];
+
+    // Create a date header
+    const dateHeader = document.createElement('div');
+    dateHeader.className = 'date-header';
+    dateHeader.textContent = formatChatDate(date);
+    chatHistory.appendChild(dateHeader);
+
+    // Create history items for this date
+    for (const id of chatGroup) {
+      const chat = allChats[id];
+      const historyItem = document.createElement('div');
+      historyItem.className = 'history-item';
+
+      // Create a message icon (you can use any suitable emoji or icon)
+      const messageIcon = document.createElement('span');
+      messageIcon.className = 'message-icon';
+      messageIcon.textContent = `📩`;
+
+      // Store the entire chat history (both user input and AI responses)
+      const chatHistoryContent = getChatHistoryContent(chat.messages);
+
+      // Set the content of the history item
+      historyItem.appendChild(messageIcon);
+      historyItem.textContent += chatHistoryContent.userInputPreview;
+
+      historyItem.onclick = (id => () => {
+        // Display the entire chat history when clicked
+        document.getElementById('chat-window').innerHTML = chatHistoryContent.fullChatHistory;
+      })(id);
+
+      chatHistory.appendChild(historyItem);
+    }
   }
 }
 
-const sendMessage = () => {
+function groupChatsByDate(chats) {
+  const groupedChats = {};
+
+  for (const id in chats) {
+    const chat = chats[id];
+    const date = formatDateForGrouping(chat.timestamp);
+
+    if (!groupedChats[date]) {
+      groupedChats[date] = [];
+    }
+
+    groupedChats[date].push(id);
+  }
+
+  return groupedChats;
+}
+
+function formatDateForGrouping(timestamp) {
+  const date = new Date(timestamp);
+  return date.toDateString();
+}
+
+function formatChatDate(dateString) {
+  const date = new Date(dateString);
+  return date.toDateString();
+}
+
+function getChatHistoryContent(messages) {
+  // Split messages by newline character to separate individual messages
+  const messageLines = messages.split('\n');
+  let userInput = '';
+  let aiResponses = '';
+  let isUserMessage = true;
+
+  for (const message of messageLines) {
+    const trimmedMessage = message.trim();
+    if (trimmedMessage.startsWith('User:')) {
+      userInput += `${isUserMessage ? '' : '\n'}${trimmedMessage.substring(6)}`;
+      isUserMessage = false;
+    } else {
+      aiResponses += `${isUserMessage ? '' : '\n'}${trimmedMessage}`;
+    }
+  }
+
+  // Combine user input and AI responses into the full chat history
+  const fullChatHistory = `User:${userInput}\nAI:${aiResponses}`;
+
+  // Return a preview of user input (first 50 characters)
+  const userInputPreview = userInput.length > 50 ? `${userInput.substring(0, 50)}...` : userInput;
+
+  return {
+    fullChatHistory,
+    userInputPreview,
+  };
+}
+
+// Function to extract the first 50 characters of the user's input from chat messages
+function getUserFirstInput(messages) {
+  // Split messages by newline character to separate individual messages
+  const messageLines = messages.split('\n');
+
+  // Find the first user message (not AI)
+  for (const message of messageLines.reverse()) {
+    const trimmedMessage = message.trim();
+    if (trimmedMessage.startsWith('User:')) {
+      // Extract the user's input (assuming it starts with "User:")
+      const userInput = trimmedMessage.substring(6);
+      // Return the first 50 characters or the entire input if it's shorter
+      return userInput.length > 50 ? `${userInput.substring(0, 50)}...` : userInput;
+    }
+  }
+  // If no user message is found, return a default message
+  return 'No user input found';
+}
+
+const sendMessage = async () => {
   const msg = document.querySelector("#input-field").value;
   lastMessage = msg;
   document.querySelector("#input-field").value = "";
 
-  let messageContainer = document.createElement("div");
+  const messageContainer = document.createElement("div");
   messageContainer.className = "message-container";
 
-  let userAvatar = document.createElement("img");
+  const userAvatar = document.createElement("img");
   userAvatar.src = "./assets/user-avatar";
   userAvatar.className = "user-avatar";
 
-  let userMessage = document.createElement("div");
+  const userMessage = document.createElement("div");
   userMessage.className = "message user-message";
-  userMessage.textContent = msg;
+  userMessage.textContent = `User: ${msg}`;
 
   messageContainer.appendChild(userAvatar);
   messageContainer.appendChild(userMessage);
-  
-  let chatId = generateChatID();
-  
+
+  // Append user message only to the chat window
+  const chatWindow = document.getElementById("chat-window");
+  if (chatWindow) {
+    chatWindow.appendChild(messageContainer);
+  }
+
+  const chatId = generateChatID();
+
   allChats[chatId] = {
-    messages: document.querySelector("#chat-window").innerHTML,
+    messages: `\nUser: ${msg}`, // Append user's input to messages
     timestamp: Date.now()
   };
 
-  messageContainer.id = `msg-${allChats[chatId].timestamp}`;
-  document.getElementById("chat-window").appendChild(messageContainer);
+  try {
+    // Call the OpenAI API to have an interactive conversation
+    const aiResponse = await interactWithAI(msg);
 
-  setTimeout(() => {
-    let aiContainer = document.createElement("div");
-    aiContainer.className = "message-container";
+    setTimeout(() => {
+      const aiContainer = document.createElement("div");
+      aiContainer.className = "message-container";
 
-    let aiAvatar = document.createElement("img");
-    aiAvatar.src = "./assets/ai-avatar";
-    aiAvatar.className = "ai-avatar";
-    aiContainer.appendChild(aiAvatar);
+      const aiAvatar = document.createElement("img");
+      aiAvatar.src = "./assets/ai-avatar";
+      aiAvatar.className = "ai-avatar";
+      aiContainer.appendChild(aiAvatar);
 
-    let aiResponse = document.createElement("div");
-    aiResponse.className = "message ai-message";
+      const aiResponseDiv = document.createElement("div");
+      aiResponseDiv.className = "message ai-message";
+      aiResponseDiv.textContent = `AI: ${aiResponse}`;
 
-    aiContainer.appendChild(aiResponse);
-    document.querySelector("#chat-window").appendChild(aiContainer);
+      aiContainer.appendChild(aiResponseDiv);
 
-    aiContainer.id = `ai-${Date.now()}`; 
-    document.getElementById(aiContainer.id).scrollIntoView({ behavior: 'smooth' });
-
-    let txt = `Response to '${msg}'`;
-    let i = 0;
-    let speed = 50;
-
-    const typeWriter = () => {
-      if (i < txt.length) {
-        aiResponse.textContent += txt.charAt(i);
-        i++;
-        setTimeout(typeWriter, speed);
+      // Append AI response to the chat window
+      if (chatWindow) {
+        chatWindow.appendChild(aiContainer);
       }
-    };
-    typeWriter();
-  }, 1000);
-  
-  renderChatHistory();
-  
-  const msgElem = document.getElementById(messageContainer.id);
-  msgElem.scrollIntoView({ behavior: "smooth" });
-}
 
-document.querySelector("#input-field")
-  .addEventListener("keyup", (event) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      sendMessage();
-    } else if (event.key === "ArrowUp") {
-      document.querySelector("#input-field").value = lastMessage;
-    }
-  });
+      aiContainer.id = `ai-${Date.now()}`;
+      const aiContainerElement = document.getElementById(aiContainer.id);
+      if (aiContainerElement) {
+        aiContainerElement.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 1000);
+
+    renderChatHistory();
+  } catch (error) {
+    console.error("Error communicating with AI:", error);
+  }
+
+  // Use the provided function to get the user's first input
+  const userFirstInput = getUserFirstInput(allChats[chatId].messages);
+
+  // Update the content of the history item with the user's first input
+  const historyItem = document.querySelector(`#msg-${allChats[chatId].timestamp}`);
+  if (historyItem) {
+    historyItem.textContent = `📩 ${userFirstInput}`;
+  }
+
+  // Scroll the chat window smoothly to the new message
+  if (historyItem) {
+    historyItem.scrollIntoView({ behavior: "smooth" });
+  }
+};
+
+document.querySelector("#input-field").addEventListener("keyup", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    sendMessage();
+  } else if (event.key === "ArrowUp") {
+    document.querySelector("#input-field").value = lastMessage;
+  }
+});
 
 document.querySelector("#send-button").addEventListener("click", sendMessage);
 
@@ -104,7 +222,7 @@ const resetChat = () => {
   allChats = {};
   document.querySelector("#chat-window").innerHTML = '';
   renderChatHistory();
-}
+};
 
 document.querySelector('#regenerate-button').addEventListener('click', () => {
   document.querySelector("#chat-window").innerHTML = '<div>Regenerated Message from AI!</div>';
@@ -121,13 +239,40 @@ document.querySelector('#new-chat-button').addEventListener('click', () => {
 });
 
 document.querySelector('#clear-context-button').addEventListener('click', resetChat);
+
 document.querySelector("#down-arrow-button").addEventListener("click", scrollToLatestChat);
 
-
 function scrollToLatestChat() {
-    let chatWindow = document.querySelector("#chat-window");
-    let latestMsg = chatWindow.lastElementChild;
-    if(latestMsg) 
-      latestMsg.scrollIntoView({behavior: 'smooth'}); 
+  let chatWindow = document.querySelector("#chat-window");
+  let latestMsg = chatWindow.lastElementChild;
+  if (latestMsg)
+    latestMsg.scrollIntoView({ behavior: 'smooth' });
+}
+
+// Function to interact with the AI using OpenAI API
+async function interactWithAI(userInput) {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${OPENAI_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        { role: 'system', content: 'You are a helpful assistant.' },
+        { role: 'user', content: userInput },
+      ],
+    }),
+  });
+
+  if (response.ok) {
+    const data = await response.json();
+    return data.choices[0].message.content.trim();
+  } else {
+    throw new Error('Failed to communicate with AI');
   }
-  
+}
+
+// Call renderChatHistory to initialize chat history
+renderChatHistory();
