@@ -170,19 +170,34 @@ const sendMessage = async () => {
 
       const aiResponseDiv = document.createElement("div");
       aiResponseDiv.className = "message ai-message";
-      aiResponseDiv.textContent = `AI: ${aiResponse}`;
 
-      aiContainer.appendChild(aiResponseDiv);
+      // Implement the typewriter effect
+      aiContainer.appendChild(aiResponseDiv); // Append the response div to the container
 
-      // Append AI response to the chat window
       if (chatWindow) {
-        chatWindow.appendChild(aiContainer);
+        chatWindow.appendChild(aiContainer); // Append the container to the chat window
       }
 
       aiContainer.id = `ai-${Date.now()}`;
       const aiContainerElement = document.getElementById(aiContainer.id);
+
       if (aiContainerElement) {
         aiContainerElement.scrollIntoView({ behavior: 'smooth' });
+
+        // Implement the typewriter effect
+        const txt = aiResponse;
+        let i = 0;
+        const speed = 50;
+
+        const typeWriter = () => {
+          if (i < txt.length) {
+            aiResponseDiv.textContent += txt.charAt(i);
+            i++;
+            setTimeout(typeWriter, speed);
+          }
+        };
+
+        typeWriter();
       }
     }, 1000);
 
