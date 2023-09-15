@@ -152,74 +152,71 @@ const sendMessage = async () => {
 
   allChats[chatId] = {
     messages: `\nUser: ${msg}`, // Append user's input to messages
-    timestamp: Date.now()
+    timestamp: Date.now(),
   };
 
   try {
     // Call the OpenAI API to have an interactive conversation
-    const aiResponse = await interactWithAI(msg);
+    const aiResponseMarkdown = await interactWithAI(msg);
 
-    setTimeout(() => {
-      const aiContainer = document.createElement("div");
-      aiContainer.className = "message-container";
+    // Create a new chat container for the AI response
+    const aiContainer = document.createElement("div");
+    aiContainer.className = "message-container";
 
-      const aiAvatar = document.createElement("img");
-      aiAvatar.src = "./assets/ai-avatar";
-      aiAvatar.className = "ai-avatar";
-      aiContainer.appendChild(aiAvatar);
+    const aiAvatar = document.createElement("img");
+    aiAvatar.src = "./assets/ai-avatar";
+    aiAvatar.className = "ai-avatar";
+    aiContainer.appendChild(aiAvatar);
 
-      const aiResponseDiv = document.createElement("div");
-      aiResponseDiv.className = "message ai-message";
+    const aiResponseDiv = document.createElement("div");
+    aiResponseDiv.className = "message ai-message";
 
-      // Implement the typewriter effect
-      aiContainer.appendChild(aiResponseDiv); // Append the response div to the container
+    // Convert Markdown to HTML with typewriter effect
+    const conv = convertMarkdownWithTypewriter(aiResponseMarkdown, aiResponseDiv);
+    console.log(`🚀 ~ file: main.js:176 ~ sendMessage ~ conv:`, conv);
 
-      if (chatWindow) {
-        chatWindow.appendChild(aiContainer); // Append the container to the chat window
-      }
+    aiContainer.appendChild(aiResponseDiv);
+
+    // Append AI response to the chat window
+    if (chatWindow) {
+      chatWindow.appendChild(aiContainer);
 
       aiContainer.id = `ai-${Date.now()}`;
       const aiContainerElement = document.getElementById(aiContainer.id);
 
       if (aiContainerElement) {
         aiContainerElement.scrollIntoView({ behavior: 'smooth' });
-
-        // Implement the typewriter effect
-        const txt = aiResponse;
-        let i = 0;
-        const speed = 50;
-
-        const typeWriter = () => {
-          if (i < txt.length) {
-            aiResponseDiv.textContent += txt.charAt(i);
-            i++;
-            setTimeout(typeWriter, speed);
-          }
-        };
-
-        typeWriter();
       }
-    }, 1000);
+    }
 
+    // After sending a message and receiving a response, call renderChatHistory
     renderChatHistory();
   } catch (error) {
     console.error("Error communicating with AI:", error);
   }
-
-  // Use the provided function to get the user's first input
-  const userFirstInput = getUserFirstInput(allChats[chatId].messages);
-
-  // Update the content of the history item with the user's first input
-  const historyItem = document.querySelector(`#msg-${allChats[chatId].timestamp}`);
-  if (historyItem) {
-    historyItem.textContent = `📩 ${userFirstInput}`;
-  }
-
-  // Scroll the chat window smoothly to the new message
-  if (historyItem) {
-    historyItem.scrollIntoView({ behavior: "smooth" });
-  }
 };
+
+// Function to convert Markdown to HTML with typewriter effect
+const convertMarkdownWithTypewriter = (markdownText, targetElement) => {
+  const htmlText = marked.parse(markdownText); // Convert markdown to HTML using marked.js library
+  console.log(`🚀 ~ file: main.js:202 ~ convertMarkdownWithTypewriter ~ htmlText:`, htmlText);
+  targetElement.innerHTML = ''; // Clear the target element
+  typewrite(htmlText, targetElement);
+};
+
+// Typewriter effect function
+const typewrite = (text, element) => {
+  let index = 0;
+  const interval = setInterval(() => {
+    if (index < text.length) {
+      element.innerHTML += text[index];
+      index++;
+    } else {
+      clearInterval(interval);
+    }
+  }, 50); // Change this value to control the speed of the typewriter effect
+};
+
 
 document.querySelector("#input-field").addEventListener("keyup", (event) => {
   if (event.key === "Enter") {
@@ -240,8 +237,9 @@ const resetChat = () => {
 };
 
 document.querySelector('#regenerate-button').addEventListener('click', () => {
-  document.querySelector("#chat-window").innerHTML = '<div>Regenerated Message from AI!</div>';
+    sendMessage();
 });
+
 
 document.querySelector('#share-button').addEventListener('click', () => {
   alert('Feature to share chat history coming soon...');
@@ -275,7 +273,7 @@ async function interactWithAI(userInput) {
     body: JSON.stringify({
       model: 'gpt-3.5-turbo',
       messages: [
-        { role: 'system', content: 'You are a helpful assistant.' },
+        { role: 'system', content: 'You are a helpful assistant. Ensure code is written in Markdown. Do not mention Markdown in your response.' },
         { role: 'user', content: userInput },
       ],
     }),
@@ -283,10 +281,17 @@ async function interactWithAI(userInput) {
 
   if (response.ok) {
     const data = await response.json();
+    console.log(`🚀 ~ file: main.js:299 ~ interactWithAI ~ data.choices[0].message.content:`, data.choices[0].message.content);
+
     return data.choices[0].message.content.trim();
   } else {
     throw new Error('Failed to communicate with AI');
   }
+}
+
+function convertMarkdownToHTML(markdown) {
+  // Use marked.js to convert Markdown to HTML
+  return marked.parse(markdown);
 }
 
 // Call renderChatHistory to initialize chat history
