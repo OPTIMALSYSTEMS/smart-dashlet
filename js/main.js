@@ -191,20 +191,21 @@ const sendMessage = async () => {
         aiContainerElement.scrollIntoView({ behavior: 'smooth' });
 
         // Implement the typewriter effect
-        const txt = aiResponseMarkdown;
-        let i = 0;
-        const speed = 50;
+        // const txt = aiResponseMarkdown;
+        // let i = 0;
+        // const speed = 50;
 
-        const typeWriter = () => {
-          if (i < txt.length) {
-            aiResponseDiv.innerHTML += txt.charAt(i);
-            i++;
-            // setTimeout(typeWriter, speed);
-          }
-        };
+        // const typeWriter = () => {
+        //   if (i < txt.length) {
+        //     aiResponseDiv.innerHTML += txt.charAt(i);
+        //     i++;
+        //     setTimeout(typeWriter, speed);
+        //   }
+        // };
 
-        typeWriter();
+        // typeWriter();
       }
+      renderChatHistory();
     }
   } catch (error) {
     console.error("Error communicating with AI:", error);
@@ -254,7 +255,6 @@ function scrollToLatestChat() {
   if (latestMsg)
     latestMsg.scrollIntoView({ behavior: 'smooth' });
 }
-
 
 // Function to interact with the AI using OpenAI API
 async function interactWithAI(userInput) {
