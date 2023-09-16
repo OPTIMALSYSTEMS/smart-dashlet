@@ -152,7 +152,7 @@ const sendMessage = async () => {
 
   allChats[chatId] = {
     messages: `\nUser: ${msg}`, // Append user's input to messages
-    timestamp: Date.now(),
+    timestamp: Date.now()
   };
 
   try {
@@ -171,13 +171,16 @@ const sendMessage = async () => {
     const aiResponseDiv = document.createElement("div");
     aiResponseDiv.className = "message ai-message";
 
-    // Convert Markdown to HTML with typewriter effect
-    const conv = convertMarkdownWithTypewriter(aiResponseMarkdown, aiResponseDiv);
-    console.log(`🚀 ~ file: main.js:176 ~ sendMessage ~ conv:`, conv);
+    // Convert Markdown to HTML
+    const aiResponseHTML = convertMarkdownToHTML(aiResponseMarkdown);
+
+    // Use innerHTML to render HTML
+    aiResponseDiv.innerHTML = aiResponseHTML;
 
     aiContainer.appendChild(aiResponseDiv);
 
-    // Append AI response to the chat window
+    // Append AI response to the chat window with typewriter effect
+    const chatWindow = document.getElementById("chat-window");
     if (chatWindow) {
       chatWindow.appendChild(aiContainer);
 
@@ -186,37 +189,27 @@ const sendMessage = async () => {
 
       if (aiContainerElement) {
         aiContainerElement.scrollIntoView({ behavior: 'smooth' });
+
+        // Implement the typewriter effect
+        const txt = aiResponseMarkdown;
+        let i = 0;
+        const speed = 50;
+
+        const typeWriter = () => {
+          if (i < txt.length) {
+            aiResponseDiv.innerHTML += txt.charAt(i);
+            i++;
+            // setTimeout(typeWriter, speed);
+          }
+        };
+
+        typeWriter();
       }
     }
-
-    // After sending a message and receiving a response, call renderChatHistory
-    renderChatHistory();
   } catch (error) {
     console.error("Error communicating with AI:", error);
   }
 };
-
-// Function to convert Markdown to HTML with typewriter effect
-const convertMarkdownWithTypewriter = (markdownText, targetElement) => {
-  const htmlText = marked.parse(markdownText); // Convert markdown to HTML using marked.js library
-  console.log(`🚀 ~ file: main.js:202 ~ convertMarkdownWithTypewriter ~ htmlText:`, htmlText);
-  targetElement.innerHTML = ''; // Clear the target element
-  typewrite(htmlText, targetElement);
-};
-
-// Typewriter effect function
-const typewrite = (text, element) => {
-  let index = 0;
-  const interval = setInterval(() => {
-    if (index < text.length) {
-      element.innerHTML += text[index];
-      index++;
-    } else {
-      clearInterval(interval);
-    }
-  }, 50); // Change this value to control the speed of the typewriter effect
-};
-
 
 document.querySelector("#input-field").addEventListener("keyup", (event) => {
   if (event.key === "Enter") {
@@ -261,6 +254,7 @@ function scrollToLatestChat() {
   if (latestMsg)
     latestMsg.scrollIntoView({ behavior: 'smooth' });
 }
+
 
 // Function to interact with the AI using OpenAI API
 async function interactWithAI(userInput) {
