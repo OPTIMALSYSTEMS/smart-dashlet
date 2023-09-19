@@ -104,29 +104,14 @@ function getChatHistoryContent(messages) {
   };
 }
 
-// Function to extract the first 50 characters of the user's input from chat messages
-function getUserFirstInput(messages) {
-  // Split messages by newline character to separate individual messages
-  const messageLines = messages.split('\n');
-
-  // Find the first user message (not AI)
-  for (const message of messageLines.reverse()) {
-    const trimmedMessage = message.trim();
-    if (trimmedMessage.startsWith('User:')) {
-      // Extract the user's input (assuming it starts with "User:")
-      const userInput = trimmedMessage.substring(6);
-      // Return the first 50 characters or the entire input if it's shorter
-      return userInput.length > 50 ? `${userInput.substring(0, 50)}...` : userInput;
-    }
-  }
-  // If no user message is found, return a default message
-  return 'No user input found';
-}
-
 const sendMessage = async () => {
   const msg = document.querySelector("#input-field").value;
   lastMessage = msg;
   document.querySelector("#input-field").value = "";
+
+  showLoadingIndicator();
+  disableSendButton();
+  scrollToLatestChat();
 
   const messageContainer = document.createElement("div");
   messageContainer.className = "message-container";
@@ -156,7 +141,7 @@ const sendMessage = async () => {
   };
 
   try {
-    // Call the OpenAI API to have an interactive conversation
+    // Call the API to have an interactive conversation
     const aiResponseMarkdown = await interactWithAI(msg);
 
     // Create a new chat container for the AI response
@@ -173,9 +158,15 @@ const sendMessage = async () => {
 
     // Convert Markdown to HTML
     const aiResponseHTML = convertMarkdownToHTML(aiResponseMarkdown);
+    const aiResponseContent = aiResponseHTML;
 
+    const aiTempContainer = document.createElement("div");
+    aiTempContainer.innerHTML = aiResponseContent
+    console.log(`🚀 ~ file: main.js:180 ~ sendMessage ~ aiTempContainer:`, aiTempContainer);
+    console.log(`🚀 ~ file: main.js:180 ~ sendMessage ~ aiTempContainer.textContent:`, aiTempContainer.textContent);
+    console.log(`🚀 ~ file: main.js:178 ~ sendMessage ~ aiResponseContent:`, aiResponseContent);
     // Use innerHTML to render HTML
-    aiResponseDiv.innerHTML = aiResponseHTML;
+    // aiResponseDiv.innerHTML = aiResponseHTML;
 
     aiContainer.appendChild(aiResponseDiv);
 
@@ -190,20 +181,19 @@ const sendMessage = async () => {
       if (aiContainerElement) {
         aiContainerElement.scrollIntoView({ behavior: 'smooth' });
 
-        // Implement the typewriter effect
-        // const txt = aiResponseMarkdown;
-        // let i = 0;
-        // const speed = 50;
+        const txt = aiTempContainer.textContent;
+        let i = 0;
+        const speed = 50;
 
-        // const typeWriter = () => {
-        //   if (i < txt.length) {
-        //     aiResponseDiv.innerHTML += txt.charAt(i);
-        //     i++;
-        //     setTimeout(typeWriter, speed);
-        //   }
-        // };
+        const typeWriter = () => {
+          if (i < txt.length) {
+            aiResponseDiv.innerHTML += txt.charAt(i);
+            i++;
+            setTimeout(typeWriter, speed);
+          }
+        };
 
-        // typeWriter();
+        typeWriter();
       }
       renderChatHistory();
     }
@@ -211,6 +201,10 @@ const sendMessage = async () => {
     console.error("Error communicating with AI:", error);
   }
 };
+
+const loadingIndicator = document.getElementById('loading-indicator');
+const sendButton = document.getElementById('send-button');
+const inputField = document.querySelector("#input-field");
 
 document.querySelector("#input-field").addEventListener("keyup", (event) => {
   if (event.key === "Enter") {
@@ -234,7 +228,6 @@ document.querySelector('#regenerate-button').addEventListener('click', () => {
     sendMessage();
 });
 
-
 document.querySelector('#share-button').addEventListener('click', () => {
   alert('Feature to share chat history coming soon...');
 });
@@ -249,36 +242,68 @@ document.querySelector('#clear-context-button').addEventListener('click', resetC
 
 document.querySelector("#down-arrow-button").addEventListener("click", scrollToLatestChat);
 
-function scrollToLatestChat() {
-  let chatWindow = document.querySelector("#chat-window");
-  let latestMsg = chatWindow.lastElementChild;
-  if (latestMsg)
-    latestMsg.scrollIntoView({ behavior: 'smooth' });
+inputField.addEventListener('input', () => {
+  if (inputField.value.trim().length > 0) {
+    enableSendButton();
+  } else {
+    disableSendButton();
+  }
+});
+
+function showLoadingIndicator() {
+  loadingIndicator.style.display = 'block';
 }
 
-// Function to interact with the AI using OpenAI API
+function hideLoadingIndicator() {
+  loadingIndicator.style.display = 'none';
+}
+
+function enableSendButton() {
+  sendButton.disabled = false;
+}
+
+function disableSendButton() {
+  sendButton.disabled = true;
+}
+
+function scrollToLatestChat() {
+  const chatWindow = document.getElementById("chat-window");
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
+// Function to continuously scroll to the latest chat message
+function continuouslyScrollToLatestChat() {
+  scrollToLatestChat();
+  requestAnimationFrame(continuouslyScrollToLatestChat);
+}
+
+// Start continuously scrolling to the latest chat message
+continuouslyScrollToLatestChat();
+
+// Function to interact with the AI
 async function interactWithAI(userInput) {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('http://10.6.0.3:8087/prompt', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
     },
-    body: JSON.stringify({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        { role: 'system', content: 'You are a helpful assistant. Ensure code is written in Markdown. Do not mention Markdown in your response.' },
-        { role: 'user', content: userInput },
-      ],
+      body: JSON.stringify({
+        prompt: `${userInput}. Respond in markdown.`
     }),
   });
-
   if (response.ok) {
     const data = await response.json();
-    console.log(`🚀 ~ file: main.js:299 ~ interactWithAI ~ data.choices[0].message.content:`, data.choices[0].message.content);
-
-    return data.choices[0].message.content.trim();
+    hideLoadingIndicator();
+    if (inputField.value.trim().length > 0 && loadingIndicator.style.display === 'none') {
+      enableSendButton();
+    }
+    console.log(`🚀 ~ file: main.js:285 ~ interactWithAI ~ data:`, data);
+    return data.answer;
   } else {
+    hideLoadingIndicator();
+    if (inputField.value.trim().length > 0 && loadingIndicator.style.display === 'none') {
+      enableSendButton();
+    }
     throw new Error('Failed to communicate with AI');
   }
 }
