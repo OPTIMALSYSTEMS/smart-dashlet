@@ -5,9 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" type="text/css" href="styles/main.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css">
-  <title>Chat App</title>
+  <!-- <link rel="stylesheet" href="themes/prism.css"> -->
+  <title>optimalGPT</title>
 </head>
 <body>
+  <div>
+    <pre style="word-wrap: break-word; white-space: pre-wrap;">
+                      _         _              ___  ____ _____ ___ __  __    _    _       ______   ______ _____ _____ __  __ ____  
+      ___ _ __   __ _(_) ___   | |__  _   _   / _ \|  _ \_   _|_ _|  \/  |  / \  | |     / ___\ \ / / ___|_   _| ____|  \/  / ___| 
+     / _ \ '_ \ / _` | |/ _ \  | '_ \| | | | | | | | |_) || |  | || |\/| | / _ \ | |     \___ \\ V /\___ \ | | |  _| | |\/| \___ \ 
+    |  __/ | | | (_| | | (_) | | |_) | |_| | | |_| |  __/ | |  | || |  | |/ ___ \| |___   ___) || |  ___) || | | |___| |  | |___) |
+     \___|_| |_|\__,_|_|\___/  |_.__/ \__, |  \___/|_|    |_| |___|_|  |_/_/   \_\_____| |____/ |_| |____/ |_| |_____|_|  |_|____/ 
+                                      |___/                                                                                        </pre>
+  </div>
   <div id="app-container">
     <div id="side-panel">
       <h2>Chat History</h2>
@@ -19,6 +29,7 @@
       <div id="chat-window">
         <!-- Messages will be appended here -->
       </div>
+      <div id="loading-indicator" class="loading"></div>
       <div id="button-container">
         <button id="regenerate-button" class="action-button" title="Regenerate">
           <i class="fas fa-sync"></i> Regenerate
@@ -39,11 +50,18 @@
       <button id="down-arrow-button">⬇️</button>
       <div id="input-container">
         <input type="text" id="input-field" placeholder="Type a message...">
-        <button id="send-button">Send</button>
+        <button id="send-button" disabled>Send</button>
       </div>
     </div>
   </div>
+  <p>Selected Object:</p>
+  <div id="selectedObjects">
+      <p class="selected-objects" id="selectedObjects"></p>
+      <p>
+  </div>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- <script src="themes/prism.js"></script> -->
   <script src="js/main.js"></script>
+  <script type="module" src="js/dashlet/js/main.js"></script>
 </body>
 </html>
