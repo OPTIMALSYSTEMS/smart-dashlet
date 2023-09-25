@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "start": "bun run index.ts",
-    "deploy": "gh-pages -d ./src --repo https://github.com/OPTIMALSYSTEMS/Smart-dashlet.git"
+    "deploy": "gh-pages -d ./src --repo https://github.com/OPTIMALSYSTEMS/smart-dashlet.git"
   },
   "dependencies": {
     "expres": "^0.0.5",
